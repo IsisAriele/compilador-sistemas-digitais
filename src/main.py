@@ -1,38 +1,86 @@
-import sys
-
-# Opcodes
+# Dicionário com Opcodes
 OPCODES = {
-    "ANDI": "001100",
-    "ORI": "001101",
-    "XORI": "001110",
-    "ADDI": "001000",
-    "BEQ": "000100" ,
-    "BNE": "000101" ,
+    "andi": "001100",
+    "ori": "001101",
+    "xori": "001110",
+    "addi": "001000",
+    "beq": "000100",
+    "bne": "000101",
 }
 
-# Functions
+# Dicionário com Functions
 FUNCTIONS = {
-    "AND": "100100",
-    "OR": "100101",
-    "XOR": "100110",
-    "NOR": "100111",
-    "ADD": "100000",
-    "SUB": "100010",
-    "SLT": "101010",
+    "and": "100100",
+    "or": "100101",
+    "xor": "100110",
+    "nor": "100111",
+    "add": "100000",
+    "sub": "100010",
+    "slt": "101010",
 }
+
+
+def main():
+    input_file = input("Qual arquivo você deseja compilar? > ")
+
+    instructions = read_file(input_file)
+    output_commands = ["v2.0 raw"]
+
+    for line in instructions:
+        # Para garantirmos que a formatação sempre será minúscula equivalente aos dicionários.
+        line = line.lower()
+
+        if is_opcode(line):
+            command = format_opcode_command_to_bin(line)
+            command = bin_to_hex(command)
+        elif is_function(line):
+            command = format_function_command_to_bin(line)
+            command = bin_to_hex(command)
+        else:
+            print(
+                f"Não foi possível compilar o seguinte comando: '{line.strip()}'"
+            )
+            continue
+
+        output_commands.append(command)
+
+    write_file(output_commands, "saida.txt")
+    print(f"Arquivo '{input_file}' compilado com sucesso!")
+
 
 def read_file(filename):
-    f = open(filename, "r")
+    file = open(filename, "r")
     # O método readlines lê as linhas do arquivo
     # e retorna uma lista com cada uma delas.
-    lines = f.readlines()
-    f.close()
+    lines = file.readlines()
+    file.close()
+
     return lines
 
-def format_function_command(line):
+
+def write_file(list_of_values, filename):
+    file = open(filename, "w")
+    for value in list_of_values:
+        file.write(f"{value}\n")
+
+    file.close()
+
+    return None
+
+
+def is_function(line):
+    for function in FUNCTIONS.keys():
+        if function in line:
+            return True
+
+    return False
+
+
+def format_function_command_to_bin(line):
     opcode = "000000"
     shift_amount = "00000"
-
+    # O método strip tira os \n e
+    # o split gera uma lista a partir da string com um parâmetro de "quebra".
     function, rs, rt, rw = line.strip().split(" ")
 
     # Para excluirmos o sinal de $ dos registradores...
@@ -40,11 +88,32 @@ def format_function_command(line):
     rt = to_bin(rt[1:])
     rw = to_bin(rw[1:])
 
-    # O método upper deixa as letras em maiúsculo
-    function = FUNCTIONS[function.upper()]
+    function = FUNCTIONS[function]
 
     # zfill = zero fill = preencher com zeros (funciona para strings).
     return f"{opcode}{rs.zfill(5)}{rt.zfill(5)}{rw.zfill(5)}{shift_amount}{function}"
+
+
+def is_opcode(line):
+    for opcode in OPCODES.keys():
+        if opcode in line:
+            return True
+
+    return False
+
+
+def format_opcode_command_to_bin(line):
+    opcode, rs, rw, imm = line.strip().split(" ")
+
+    # Para excluirmos o sinal de $ dos registradores...
+    rs = to_bin(rs[1:])
+    rw = to_bin(rw[1:])
+    imm = to_bin(imm)
+
+    opcode = OPCODES[opcode]
+
+    # zfill = zero fill = preencher com zeros (funciona para strings).
+    return f"{opcode}{rs.zfill(5)}{rw.zfill(5)}{imm.zfill(16)}"
 
 
 def to_bin(value):
@@ -66,15 +135,5 @@ def bin_to_hex(bin_value):
     return hex(decimal_value)[2:]
 
 
-lines = read_file("arquivo_function.txt")
-# A função "read_file" retorna uma lista contendo cada uma das linhas de um arquivo específico.
-
-for line in lines:
-    # Para cada linha, nós vamos seguir a seguinte lógica:
-    # - Convertemos o comando para binário
-    # - Convertemos o binário para hexadecimal
-    bin_command = format_function_command(line)
-    hex_command = bin_to_hex(bin_command)
-
-    print(hex_command)
-
+# Execução do programa...
+main()
